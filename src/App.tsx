@@ -15,7 +15,7 @@ function App() {
     [activeTags],
   )
   const total = films.length
-  const marked = Object.keys(statuses).length
+  const marked = films.filter((film) => statuses[film.id]).length
 
   function toggleTag(tag: string) {
     setActiveTags((current) =>
