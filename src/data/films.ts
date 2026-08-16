@@ -55,9 +55,9 @@ export const films: Film[] = [
   { id: 'obsession', title: 'Обсессия', tags: ['ужастик'] },
   { id: 'bring-her-back', title: 'Верни её из мёртвых', tags: ['ужастик'] },
   { id: 'in-the-dark', title: 'Взаперти', tags: ['драма'] },
-  { id: 'constantin', title: 'Константин', tags: ['фентези'] },
+  { id: 'constantin', title: 'Константин', tags: ['фэнтези'] },
   { id: 'barbarian', title: 'Варвар', tags: ['ужастик'] },
   { id: 'silence', title: 'Тишина', tags: ['типо ужастик'] },
   { id: 'seven', title: 'Семь', tags: ['лега','детектив'] },
-  { id: 'kolobok', title: 'Колобок', tags: ['лега','ужастик','фентези','посмеяться'] },
+  { id: 'kolobok', title: 'Колобок', tags: ['лега','ужастик','фэнтези','посмеяться'] },
 ]
