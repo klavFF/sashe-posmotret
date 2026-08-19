@@ -80,7 +80,7 @@ function App() {
               </p>
             </div>
             <button type="button" className="scream-btn" onClick={triggerScream} disabled={screaming}>
-              Страшная кнопка <span aria-hidden="true">💀</span>
+              Нестрашная кнопка <span aria-hidden="true">🌈</span>
             </button>
           </div>
         </header>
