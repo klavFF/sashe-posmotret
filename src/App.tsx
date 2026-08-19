@@ -1,12 +1,19 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { collectTags, coverSrc, films, STATUS_OPTIONS, tagTone, youtubeId } from './data/films'
 import type { Film, FilmStatus } from './data/films'
 import { useFilmStatuses } from './hooks/useFilmStatuses'
+import screamImg from './assets/screamer.png'
+import screamSound from './assets/screamer.mp3'
+
+const SCREAM_MS = 2000
 
 function App() {
   const { statuses, setStatus, ready, error } = useFilmStatuses()
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [trailerFilm, setTrailerFilm] = useState<Film | null>(null)
+  const [screaming, setScreaming] = useState(false)
+  const screamAudio = useRef<HTMLAudioElement | null>(null)
+  const screamTimer = useRef<number | null>(null)
   const allTags = useMemo(() => collectTags(films), [])
   const visible = useMemo(
     () =>
@@ -24,25 +31,58 @@ function App() {
     )
   }
 
+  useEffect(() => {
+    const audio = new Audio(screamSound)
+    audio.preload = 'auto'
+    screamAudio.current = audio
+    return () => {
+      audio.pause()
+      if (screamTimer.current) window.clearTimeout(screamTimer.current)
+    }
+  }, [])
+
+  function triggerScream() {
+    if (screaming) return
+    setScreaming(true)
+    const audio = screamAudio.current
+    if (audio) {
+      audio.currentTime = 0
+      void audio.play().catch(() => {})
+    }
+    screamTimer.current = window.setTimeout(() => {
+      audio?.pause()
+      if (audio) audio.currentTime = 0
+      setScreaming(false)
+      screamTimer.current = null
+    }, SCREAM_MS)
+  }
+
   return (
     <>
       <AutumnLeaves />
       <div className="page">
         <header className="hero">
           <p className="eyebrow">как и обещал</p>
-          <h1>
-            Осенний список <span className="wink" aria-hidden="true">😉</span>
-          </h1>
-          <p className="lede">
-            Пока добавлю что вспомню, работаем в режиме бета-теста) 
-          </p>
-          <p className="counter">
-            {ready
-              ? activeTags.length
-                ? `показано ${visible.length} · отмечено ${marked} из ${total}`
-                : `отмечено ${marked} из ${total}`
-              : 'загружаем отметки…'}
-          </p>
+          <div className="hero-row">
+            <div className="hero-copy">
+              <h1>
+                Осенний список <span className="wink" aria-hidden="true">😉</span>
+              </h1>
+              <p className="lede">
+                Пока добавлю что вспомню, работаем в режиме бета-теста) 
+              </p>
+              <p className="counter">
+                {ready
+                  ? activeTags.length
+                    ? `показано ${visible.length} · отмечено ${marked} из ${total}`
+                    : `отмечено ${marked} из ${total}`
+                  : 'загружаем отметки…'}
+              </p>
+            </div>
+            <button type="button" className="scream-btn" onClick={triggerScream} disabled={screaming}>
+              Страшная кнопка <span aria-hidden="true">💀</span>
+            </button>
+          </div>
         </header>
 
         {error ? <p className="banner">{error}</p> : null}
@@ -85,6 +125,11 @@ function App() {
       </div>
       {trailerFilm ? (
         <TrailerModal film={trailerFilm} onClose={() => setTrailerFilm(null)} />
+      ) : null}
+      {screaming ? (
+        <div className="screamer" aria-hidden="true">
+          <img src={screamImg} alt="" />
+        </div>
       ) : null}
     </>
   )
