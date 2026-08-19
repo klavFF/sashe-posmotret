@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react'
-import { collectTags, films, STATUS_OPTIONS, tagTone } from './data/films'
+import { useEffect, useMemo, useState } from 'react'
+import { collectTags, coverSrc, films, STATUS_OPTIONS, tagTone, youtubeId } from './data/films'
 import type { Film, FilmStatus } from './data/films'
 import { useFilmStatuses } from './hooks/useFilmStatuses'
 
 function App() {
   const { statuses, setStatus, ready, error } = useFilmStatuses()
   const [activeTags, setActiveTags] = useState<string[]>([])
+  const [trailerFilm, setTrailerFilm] = useState<Film | null>(null)
   const allTags = useMemo(() => collectTags(films), [])
   const visible = useMemo(
     () =>
@@ -73,6 +74,7 @@ function App() {
                   activeTags={activeTags}
                   onSelect={(next) => setStatus(film.id, next)}
                   onToggleTag={toggleTag}
+                  onTrailer={setTrailerFilm}
                 />
               ))}
             </ul>
@@ -81,6 +83,9 @@ function App() {
           )}
         </main>
       </div>
+      {trailerFilm ? (
+        <TrailerModal film={trailerFilm} onClose={() => setTrailerFilm(null)} />
+      ) : null}
     </>
   )
 }
@@ -186,13 +191,49 @@ type FilmRowProps = {
   activeTags: string[]
   onSelect: (status: FilmStatus) => void
   onToggleTag: (tag: string) => void
+  onTrailer: (film: Film) => void
 }
 
-function FilmRow({ film, status, activeTags, onSelect, onToggleTag }: FilmRowProps) {
+function FilmPoster({ cover, title }: { cover: string; title: string }) {
+  const [failed, setFailed] = useState(false)
+  if (failed) return null
+  return (
+    <img
+      className="film-poster"
+      src={coverSrc(cover)}
+      alt=""
+      title={title}
+      onError={() => setFailed(true)}
+    />
+  )
+}
+
+function TrailerIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
+      <path fill="currentColor" d="M7.2 4.6v10.8L16 10 7.2 4.6z" />
+    </svg>
+  )
+}
+
+function FilmRow({ film, status, activeTags, onSelect, onToggleTag, onTrailer }: FilmRowProps) {
   return (
     <li className={`film${status ? ` is-${status}` : ''}`}>
       <div className="film-meta">
-        <h3>{film.title}</h3>
+        {film.cover ? <FilmPoster cover={film.cover} title={film.title} /> : null}
+        <div className="film-heading">
+          <h3>{film.title}</h3>
+          {film.trailer ? (
+            <button
+              type="button"
+              className="trailer-btn"
+              aria-label={`Трейлер: ${film.title}`}
+              onClick={() => onTrailer(film)}
+            >
+              <TrailerIcon />
+            </button>
+          ) : null}
+        </div>
       </div>
       {film.tags.length ? (
         <div className="film-tags">
@@ -225,6 +266,59 @@ function FilmRow({ film, status, activeTags, onSelect, onToggleTag }: FilmRowPro
         })}
       </div>
     </li>
+  )
+}
+
+type TrailerModalProps = {
+  film: Film
+  onClose: () => void
+}
+
+function TrailerModal({ film, onClose }: TrailerModalProps) {
+  const videoId = film.trailer ? youtubeId(film.trailer) : null
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [onClose])
+
+  return (
+    <div className="modal-backdrop" onClick={onClose} role="presentation">
+      <div
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Трейлер: ${film.title}`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="modal-head">
+          <p>{film.title}</p>
+          <button type="button" className="modal-close" aria-label="Закрыть" onClick={onClose}>
+            ×
+          </button>
+        </div>
+        <div className="modal-frame">
+          {videoId ? (
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`}
+              title={`Трейлер: ${film.title}`}
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
+            <p className="modal-error">Не получилось открыть трейлер.</p>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 
